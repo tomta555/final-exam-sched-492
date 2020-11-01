@@ -34,10 +34,10 @@ def get_slot(course_slot, student):
 
 # 1 over seat 250
 # 2 overlap 200
-# 3 consecutive_a 50
-# 4 consecutive_b 40
-# 5 consecutive_c 30
-# 6 consecutive_d 20
+# 3 consecutive_a (0800,1200) 50
+# 4 consecutive_b (1200,1530) 40
+# 5 consecutive_c (0800,1530) 30
+# 6 consecutive_d (1530,0800) 20
 # 7 wait3day 10
 # 7 first_slot 10
 
@@ -62,7 +62,7 @@ def pen_consecutive_a(s1, s2):
 
 def pen_consecutive_b(s1, s2):
     if abs(s1 - s2) == 1:  # Consecutive exam
-        return 1 if s2 % 3 == 1 else 0  # Exam 12.00 then 15.30 on the same day
+        return 1 if s1 % 3 == 1 else 0  # Exam 12.00 then 15.30 on the same day
     return 0
 
 
@@ -125,7 +125,7 @@ for s in student_slot:
     for i in range(1, len(pen_calc)+1):
         penalties[i] += pen_calc[i]
         penalties_count[i] += pen_count[i]
-print(penalties)
-print(penalties_count)
+print('Penalties:',penalties)
+print('Penalties_count:',penalties_count)
 print('Total Penalty = ', sum(penalties.values()))
 print('Total Penalty Count = ', sum(penalties_count.values()))
