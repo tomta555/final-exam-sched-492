@@ -24,9 +24,9 @@ def remove_nocourse(student_slot):
 
 def get_slot(course_slot, student):
     student_slot = []
-    for s in student:
+    for s in student: # s = all enroll course
         each_student_slot = []
-        for c in s:
+        for c in s: # c = each course from s
             each_student_slot.append(int(course_slot.get(c, 99)))
         student_slot.append(remove_noslot(each_student_slot))
         # student_slot.append(each_student_slot)
