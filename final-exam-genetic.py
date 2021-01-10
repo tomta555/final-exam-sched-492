@@ -4,6 +4,7 @@ import random
 import time
 import itertools
 import ast
+import networkx as nx
 
 START_TIME = time.time()
 
@@ -39,6 +40,24 @@ COURSE_LIST.sort()
 # Number of courses
 TOTAL_COURSES = len(COURSE_LIST)
 
+with open('data/sched-1-63/conflicts-sorted.in', 'r') as conflicts:
+    CONFLICTS = list(csv.reader(conflicts, delimiter=' '))
+
+# with open('data/sched-1-63/degrees-sorted.in', 'r') as degrees:
+#     DEGREES = list(csv.reader(degrees, delimiter=' '))
+
+G = nx.Graph()
+G.add_nodes_from(COURSE_LIST)
+gNode = list(G.nodes)
+
+for node in CONFLICTS:
+    if node[0] in gNode and node[1] in gNode:
+        G.add_edge(node[0],node[1])
+SG = [G.subgraph(c).copy() for c in nx.connected_components(G)]
+
+print('Number of G Node :',G.number_of_nodes())
+print('Graph G is connected? :', nx.is_connected(G))
+print('Number of Connected Components :',nx.number_connected_components(G))
 
 def remove_no_slot(student):
     ''' 
@@ -111,6 +130,33 @@ class Individual(object):
         for key in COURSE_LIST:
             genome[key] = self.mutated_genes()
         return genome
+    
+    @classmethod
+    def create_custom_genome(self):
+        ''' 
+        Create custom chromosome
+        '''
+        global SG, GENES
+        genome = {}
+        for g in SG:
+            max_degree = max(g.degree, key=lambda x: x[1])
+            root = max_degree[0]
+            edges = nx.bfs_edges(g, root)
+            nodes = [root] + [v for u, v in edges]
+            for n in nodes:
+                genes = [slot for slot in range(42)]
+                for c in list(g.neighbors(n)):
+                    if c in genome.keys():
+                        if genome[c] in genes:
+                            genes.remove(genome[c])
+                if n not in genome.keys(): 
+                    # Can't color some node
+                    if genes:
+                        genome[n] = random.choice(genes)
+                    else:
+                        genome[n] = random.choice(GENES)
+        return genome
+
 
     # TODO Add fuction descriptions
 
@@ -265,7 +311,7 @@ def main():
 
     # create initial population
     for _ in range(POPULATION_SIZE):
-        genome = Individual.create_genome()
+        genome = Individual.create_custom_genome()
         population.append(Individual(genome))
 
     print("Finished initialize the first generation of the population...")
