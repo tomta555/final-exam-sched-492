@@ -139,12 +139,15 @@ class Individual(object):
         global SG, GENES
         genome = {}
         for g in SG:
-            max_degree = max(g.degree, key=lambda x: x[1])
-            root = max_degree[0]
-            edges = nx.bfs_edges(g, root)
+            sorted_degree = sorted(g.degree, key=lambda x: x[1], reverse=True)
+            sorted_degree_dict = dict(sorted_degree)
+            sorted_degree_nodes = [node[0] for node in sorted_degree]
+            root = sorted_degree_nodes[0]
+            edges = nx.bfs_edges(g, root, sort_neighbors=lambda z: sorted(z, key=lambda x: sorted_degree_dict[x], reverse=True))
             nodes = [root] + [v for u, v in edges]
             for n in nodes:
                 genes = [slot for slot in range(42)]
+                # G.neighbors output neighbor by add edge sequence
                 for c in list(g.neighbors(n)):
                     if c in genome.keys():
                         if genome[c] in genes:
@@ -155,6 +158,8 @@ class Individual(object):
                         genome[n] = random.choice(genes)
                     else:
                         genome[n] = random.choice(GENES)
+                        # print(n,len(list(g.neighbors(n))))
+                        # print(list(g.neighbors(n)))
         return genome
 
 
@@ -318,9 +323,8 @@ def main():
 
     while not finish:
         population = sorted(population, key=lambda x: x.fitness)
-
         # TODO Adjust how to terminal process
-        if population[0].fitness <= 2000000:
+        if population[0].fitness <= 900000:
             finish = True
             break
 
@@ -343,10 +347,12 @@ def main():
 
         population = new_generation
 
-        print("Generation: {}\t Total penalty of fittest: {}".
-              format(generation, population[0].fitness))
-        print(population[0].pen_calc)
-        print(population[0].pen_count)
+        print("Generation: {}".format(generation))
+        for i in range(3):
+            print("Total penalty of fittest: {}".
+                format(population[i].fitness))
+            print(population[i].pen_calc)
+            print(population[i].pen_count)
 
         generation += 1
         # Write Best
