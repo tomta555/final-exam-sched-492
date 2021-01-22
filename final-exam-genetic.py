@@ -61,22 +61,24 @@ print('Number of Connected Components :',nx.number_connected_components(G))
 
 def remove_no_slot(student):
     ''' 
-    Remove course with no exam slot
+    Input: Individual student regist Ex. [261216,261497]
+    Remove course with no exam slot from student
     '''
     global COURSE_LIST
     return [slot for slot in student if slot in COURSE_LIST]
 
 
-def remove_no_exam(student):
+def remove_no_exam(students):
     ''' 
-    Remove student with no exam
+    Input: Student regists Ex. [[261216,261497],[],[261498],...]
+    Remove student who has no exam -> []
     '''
-    return [slot for slot in student if slot]
+    return [courses for courses in students if courses]
 
 
 def get_slot(course_list, student):
     ''' 
-    Get student with exam slot
+    Return students who has at least one exam slot
     '''
     student_slot = []
     for s in student:  # s = all enroll course Ex. [001101, 001102]
@@ -93,7 +95,7 @@ STUDENT_DUP_COUNT = {str(s): STUDENT_CLEAN.count(s) for s in STUDENT_CLEAN}
 print("Total courses:", TOTAL_COURSES)
 print("Total students:", len(STUDENTS))
 print("Total students cleaned:", len(STUDENT_CLEAN))
-print("Total students remove dupl:", len(STUDENT_DUP_COUNT))
+print("Total students after remove dupl:", len(STUDENT_DUP_COUNT))
 print("Finished cleaned student regist data...")
 
 
@@ -219,7 +221,7 @@ class Individual(object):
         return pen_count
 
     def penalty_calc(self, pen_count):
-        pen_value = {1: 250, 2: 200, 3: 50, 4: 40, 5: 30, 6: 20, 7: 10}
+        pen_value = {1: 250, 2: 1000, 3: 50, 4: 40, 5: 30, 6: 20, 7: 10}
         penalty = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
         for i in range(1, len(pen_value) + 1):
@@ -320,9 +322,9 @@ def main():
         population.append(Individual(genome))
 
     print("Finished initialize the first generation of the population...")
-
+    population = sorted(population, key=lambda x: x.fitness)
     while not finish:
-        population = sorted(population, key=lambda x: x.fitness)
+        
         # TODO Adjust how to terminal process
         if population[0].fitness <= 900000:
             finish = True
@@ -345,7 +347,10 @@ def main():
             child = parent1.mate(parent2)
             new_generation.append(child)
 
-        population = new_generation
+        new_generation = sorted(new_generation, key=lambda x: x.fitness)
+
+        population = new_generation[:POPULATION_SIZE]
+
 
         print("Generation: {}".format(generation))
         for i in range(3):
