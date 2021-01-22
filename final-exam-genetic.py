@@ -221,7 +221,7 @@ class Individual(object):
         return pen_count
 
     def penalty_calc(self, pen_count):
-        pen_value = {1: 250, 2: 1000, 3: 50, 4: 40, 5: 30, 6: 20, 7: 10}
+        pen_value = {1: 250, 2: 10000, 3: 78, 4: 78, 5: 38, 6: 29, 7: 12}
         penalty = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
         for i in range(1, len(pen_value) + 1):
