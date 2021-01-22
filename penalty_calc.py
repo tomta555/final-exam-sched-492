@@ -1,36 +1,59 @@
 import sys
 import csv
+import ast
 
 course_slot = {}
 exam_table = sys.argv[1]
 # regis_student = sys.argv[2]
+exam_courses = set()
+student_enrolled_courses = set()
 
 with open(exam_table, 'r') as read_exam_slot:
     for i in read_exam_slot:
         course, slot = i.strip().split(' ')
-        course_slot[course] = slot
+        course_slot[course] = int(slot)
+        exam_courses.add(course)
 
-with open('regist.in', 'r') as regis:
-    student = list(csv.reader(regis, delimiter=' '))
-
-
-def remove_noslot(each_student_slot):
-    return [slot for slot in each_student_slot if slot != 99]
+with open('regist.in', 'r') as regist:
+    STUDENTS = list(csv.reader(regist, delimiter=' '))
 
 
-def remove_nocourse(student_slot):
-    return [slot for slot in student_slot if slot]
+with open('data/sched-1-63/courses.in', 'r') as courses:
+    for row in courses:
+        student_enrolled_courses.add(row.split()[0])
+
+COURSE_LIST = list(student_enrolled_courses.intersection(exam_courses))
+COURSE_LIST.sort()
+
+TOTAL_COURSES = len(COURSE_LIST)
+
+def remove_no_slot(student):
+    ''' 
+    Input: Individual student regist Ex. [261216,261497]
+    Remove course with no exam slot from student
+    '''
+    global COURSE_LIST
+    return [slot for slot in student if slot in COURSE_LIST]
 
 
-def get_slot(course_slot, student):
+def remove_no_exam(students):
+    ''' 
+    Input: Student regists Ex. [[261216,261497],[],[261498],...]
+    Remove student who has no exam -> []
+    '''
+    return [courses for courses in students if courses]
+
+
+def get_slot(course_list, student):
+    ''' 
+    Return students who has at least one exam slot
+    '''
     student_slot = []
-    for s in student: # s = all enroll course
-        each_student_slot = []
-        for c in s: # c = each course from s
-            each_student_slot.append(int(course_slot.get(c, 99)))
-        student_slot.append(remove_noslot(each_student_slot))
-        # student_slot.append(each_student_slot)
-    return(remove_nocourse(student_slot))
+    for s in student:  # s = all enroll course Ex. [001101, 001102]
+        s_remove_noslot = remove_no_slot(s)
+        # Remove student that don't have any exam
+        student_slot.append(s_remove_noslot)
+    return (remove_no_exam(student_slot))
 
 # 1 over seat 250
 # 2 overlap 200
@@ -78,10 +101,13 @@ def pen_consecutive_d(s1, s2):
     return 0
 
 
-def penalty_count(student):
-
+def penalty_count(student,student_course):
+    # ss = {}
+    # for i in range(len(student_course)):
+    #     ss[student_course[i]] = student[i]
+    # ss = sorted(ss, key=lambda x: ss[x])
     student.sort()
-
+    
     pen_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
     count = pen_first_slot(student[0])
@@ -89,6 +115,12 @@ def penalty_count(student):
 
     for i in range(len(student)-1):
         count = pen_overlap(student[i], student[i+1])
+        # if count==1:
+        #     print(student_course)
+        #     print(ss)
+        #     print(student)
+        #     print(student[i], student[i+1])
+            
         pen_count[2] += count
         count = pen_consecutive_a(student[i], student[i+1])
         pen_count[3] += count
@@ -104,11 +136,11 @@ def penalty_count(student):
 
 
 def penalty_calc(pen_count):
-    pen_value = {1: 250, 2: 200, 3: 50, 4: 40, 5: 30, 6: 20, 7: 10}
+    pen_value = {1: 250, 2: 10000, 3: 78, 4: 78, 5: 38, 6: 29, 7: 12}
     penalty = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
-    for i in range(1, len(pen_value)+1):
-        penalty[i] = pen_value[i]*pen_count[i]
+    for i in range(1, len(pen_value) + 1):
+        penalty[i] = pen_value[i] * pen_count[i]
     return penalty
 
 
@@ -116,15 +148,29 @@ total_penalty = 0
 penalties = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 penalties_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
-student_slot = get_slot(course_slot, student)
+STUDENT_CLEAN = get_slot(COURSE_LIST, STUDENTS)
+STUDENT_DUP_COUNT = {str(s): STUDENT_CLEAN.count(s) for s in STUDENT_CLEAN}
+# For each student
+for s, count in STUDENT_DUP_COUNT.items():
+    student_slot = []
+    # Convert course-code to exam-slot
+    for key in ast.literal_eval(s):
+        student_slot.append(course_slot[key])
 
-for s in student_slot:
+    pen_count = penalty_count(student_slot, ast.literal_eval(s))
+    # Multiply duplicate student count with pen_count
+    pen_count.update((k, v*count) for k, v in pen_count.items())
 
-    pen_count = penalty_count(s)
     pen_calc = penalty_calc(pen_count)
+
     for i in range(1, len(pen_calc)+1):
         penalties[i] += pen_calc[i]
         penalties_count[i] += pen_count[i]
+
+print('Total courses:',TOTAL_COURSES)
+print("Total students:", len(STUDENTS))
+print("Total students cleaned:", len(STUDENT_CLEAN))
+print("Total students after remove dupl:", len(STUDENT_DUP_COUNT))
 print('Penalties:',penalties)
 print('Penalties_count:',penalties_count)
 print('Total Penalty = ', sum(penalties.values()))
