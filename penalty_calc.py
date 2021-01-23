@@ -56,13 +56,13 @@ def get_slot(course_list, student):
     return (remove_no_exam(student_slot))
 
 # 1 over seat 250
-# 2 overlap 200
-# 3 consecutive_a (0800,1200) 50
-# 4 consecutive_b (1200,1530) 40
-# 5 consecutive_c (0800,1530) 30
-# 6 consecutive_d (1530,0800) 20
-# 7 wait3day 10
-# 7 first_slot 10
+# 2 overlap 10000
+# 3 consecutive_a (0800,1200) 78
+# 4 consecutive_b (1200,1530) 78
+# 5 consecutive_c (0800,1530) 38
+# 6 consecutive_d (1530,0800) 29
+# 7 wait3day 12
+# 7 first_slot 12
 
 
 def pen_first_slot(first_slot):
@@ -101,11 +101,7 @@ def pen_consecutive_d(s1, s2):
     return 0
 
 
-def penalty_count(student,student_course):
-    # ss = {}
-    # for i in range(len(student_course)):
-    #     ss[student_course[i]] = student[i]
-    # ss = sorted(ss, key=lambda x: ss[x])
+def penalty_count(student):
     student.sort()
     
     pen_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
@@ -115,12 +111,6 @@ def penalty_count(student,student_course):
 
     for i in range(len(student)-1):
         count = pen_overlap(student[i], student[i+1])
-        # if count==1:
-        #     print(student_course)
-        #     print(ss)
-        #     print(student)
-        #     print(student[i], student[i+1])
-            
         pen_count[2] += count
         count = pen_consecutive_a(student[i], student[i+1])
         pen_count[3] += count
@@ -157,7 +147,7 @@ for s, count in STUDENT_DUP_COUNT.items():
     for key in ast.literal_eval(s):
         student_slot.append(course_slot[key])
 
-    pen_count = penalty_count(student_slot, ast.literal_eval(s))
+    pen_count = penalty_count(student_slot)
     # Multiply duplicate student count with pen_count
     pen_count.update((k, v*count) for k, v in pen_count.items())
 
