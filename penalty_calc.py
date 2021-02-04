@@ -54,7 +54,7 @@ with open("data/sched-1-63/courses-mod.in", "r") as courses:
 
 # Read capacity
 # for file in os.listdir('data/used-capacity/capa-reg'):
-with open("data/capacity/capa-reg/sum-capa-reg.in", "r") as courses:
+with open("data/capacity/sum-capa-reg.in", "r") as courses:
     for row in courses:
         max_capacity[row.split()[0]] = int(row.split()[1])
 
@@ -62,6 +62,16 @@ for file in os.listdir("data/exam-courses"):
     with open(os.path.join("data/exam-courses", file), "r") as courses:
         for row in courses:
             course_group[row.rstrip("\n").replace("๏ปฟ", "")] = file.replace(".in", "")
+
+to_remove = set()
+for c in student_enrolled_courses:
+    if c[3]=="7":
+        to_remove.add(c)
+    elif c[3]=="8":
+        to_remove.add(c)
+    elif c[3]=="9":
+        to_remove.add(c)
+student_enrolled_courses = student_enrolled_courses.difference(to_remove)
 
 COURSE_LIST = list(student_enrolled_courses.intersection(exam_courses))
 COURSE_LIST.sort()
@@ -295,6 +305,6 @@ for k, v in penalties.items():
 print("Each penalty count of solution:")
 for k, v in penalties_count.items():
     print(str(int(k)-1)+": "+str(v))
-print("Exceed capacity penalty = ", exceed_capacity_penalty)
-print("Total penalty = ", sum(penalties.values()))
-print("Total penalty count = ", sum(penalties_count.values()))
+print("Exceed capacity penalty =", exceed_capacity_penalty)
+print("Total penalty =", sum(penalties.values()))
+print("Total penalty count =", sum(penalties_count.values()))
