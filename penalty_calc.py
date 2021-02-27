@@ -3,6 +3,7 @@ import csv
 import ast
 import os
 import math
+import stscheduler
 
 course_slot = {}
 exam_table = sys.argv[1]
@@ -43,35 +44,35 @@ with open(exam_table, "r") as read_exam_slot:
         course_slot[course] = int(slot)
         exam_courses.add(course)
 
-with open("regist-mod.in", "r") as regist:
+with open(stscheduler.regist, "r", encoding="utf-8-sig") as regist:
     STUDENTS = list(csv.reader(regist, delimiter=" "))
 
 
-with open("data/sched-1-63/courses-mod.in", "r") as courses:
+with open(stscheduler.st_courses, "r", encoding="utf-8-sig") as courses:
     for row in courses:
         student_enrolled_courses.add(row.split()[0])
         course_total_enroll[row.split()[0]] = int(row.split()[1])
 
 # Read capacity
 # for file in os.listdir('data/used-capacity/capa-reg'):
-with open("data/capacity/sum-capa-reg.in", "r") as courses:
+with open(stscheduler.capacity, "r", encoding="utf-8-sig") as courses:
     for row in courses:
         max_capacity[row.split()[0]] = int(row.split()[1])
 
-for file in os.listdir("data/exam-courses"):
-    with open(os.path.join("data/exam-courses", file), "r") as courses:
+for file in os.listdir(stscheduler.fa_course):
+    with open(os.path.join(stscheduler.fa_course, file), "r", encoding="utf-8-sig") as courses:
         for row in courses:
-            course_group[row.rstrip("\n").replace("๏ปฟ", "")] = file.replace(".in", "")
+            course_group[row.rstrip("\n")] = file.replace(".in", "")
 
-to_remove = set()
-for c in student_enrolled_courses:
-    if c[3]=="7":
-        to_remove.add(c)
-    elif c[3]=="8":
-        to_remove.add(c)
-    elif c[3]=="9":
-        to_remove.add(c)
-student_enrolled_courses = student_enrolled_courses.difference(to_remove)
+# to_remove = set()
+# for c in student_enrolled_courses:
+#     if c[3]=="7":
+#         to_remove.add(c)
+#     elif c[3]=="8":
+#         to_remove.add(c)
+#     elif c[3]=="9":
+#         to_remove.add(c)
+# student_enrolled_courses = student_enrolled_courses.difference(to_remove)
 
 COURSE_LIST = list(student_enrolled_courses.intersection(exam_courses))
 COURSE_LIST.sort()
@@ -157,32 +158,36 @@ def pen_consecutive_d(s1, s2):
 def penalty_count(student):
     student.sort()
 
-    pen_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+    pen_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
     count = pen_first_slot(student[0])
-    pen_count[6] += count
+    pen_count[7] += count
 
     for i in range(len(student) - 1):
         count = pen_overlap(student[i], student[i + 1])
-        pen_count[1] += count
-        count = pen_consecutive_a(student[i], student[i + 1])
         pen_count[2] += count
-        count = pen_consecutive_b(student[i], student[i + 1])
+        count = pen_consecutive_a(student[i], student[i + 1])
         pen_count[3] += count
-        count = pen_consecutive_c(student[i], student[i + 1])
+        count = pen_consecutive_b(student[i], student[i + 1])
         pen_count[4] += count
-        count = pen_consecutive_d(student[i], student[i + 1])
+        count = pen_consecutive_c(student[i], student[i + 1])
         pen_count[5] += count
-        count = pen_wait3day(student[i], student[i + 1])
+        count = pen_consecutive_d(student[i], student[i + 1])
         pen_count[6] += count
+        count = pen_wait3day(student[i], student[i + 1])
+        pen_count[7] += count
+    # calc slot[i], slot[i+2]
+    for i in range(len(student_slot)-2):
+        count = pen_consecutive_c(student_slot[i], student_slot[i + 2])
+        pen_count[5] += count
     return pen_count
 
 
 def penalty_calc(pen_count):
-    pen_value = {1: 10000, 2: 78, 3: 78, 4: 38, 5: 29, 6: 12}
-    penalty = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+    pen_value = {1: 0, 2: 10000, 3: 78, 4: 78, 5: 38, 6: 29, 7: 12}
+    penalty = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
-    for i in range(1, 7):
+    for i in range(1, 8):
         penalty[i] = pen_value[i] * pen_count[i]
     return penalty
 
@@ -212,6 +217,8 @@ def pen_capacity(solution, max_capacity, course_group, course_total_enroll):
         curr_capacity = {}
         for c in v:
             group = course_group.get(c, "99")
+            # if group == '19':
+            #     print(c, course_total_enroll[c])
             if group not in curr_capacity.keys():
                 curr_capacity[group] = course_total_enroll[c]
             else:
@@ -228,6 +235,8 @@ def pen_capacity(solution, max_capacity, course_group, course_total_enroll):
             # temporary exclude eng course
             if group == "01" and capa > 5000:
                 continue
+            if group == "19" and capa > 3000:
+                continue
 
             # if reach 80% of capacity the rest students will be assign to RB
             if capa > max_capa80:
@@ -238,11 +247,11 @@ def pen_capacity(solution, max_capacity, course_group, course_total_enroll):
                 else:
                     capacity_percent = (capa / max_capacity[group]) * 100
                     if capacity_percent > 100:
-                        # print("capa%", capacity_percent)
-                        # print("capa", capa)
-                        # print("max capa", max_capacity[group])
-                        # print("faculty", group)
-                        # print("------------------------")
+                        print("capa%", capacity_percent)
+                        print("capa", capa)
+                        print("max capa", max_capacity[group])
+                        print("faculty", group)
+                        print("------------------------")
                         penalty += expo_pen(capacity_percent)
                     elif capacity_percent >= 80:
                         penalty += linear_pen(capacity_percent)
@@ -265,8 +274,8 @@ def get_reg_exam_solution(course_slot, course_list):
     return solution
 
 total_penalty = 0
-penalties = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
-penalties_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+penalties = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
+penalties_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
 
 STUDENT_CLEAN = get_slot(COURSE_LIST, STUDENTS)
 STUDENT_DUP_COUNT = {str(s): STUDENT_CLEAN.count(s) for s in STUDENT_CLEAN}
@@ -283,13 +292,15 @@ for s, count in STUDENT_DUP_COUNT.items():
 
     pen_calc = penalty_calc(pen_count)
 
-    for i in range(1, 7):
+    for i in range(1, 8):
         penalties[i] += pen_calc[i]
         penalties_count[i] += pen_count[i]
 
 reg_exam = get_reg_exam_solution(course_slot,COURSE_LIST)
 pencapa = pen_capacity(reg_exam, max_capacity, course_group, course_total_enroll)
 exceed_capacity_penalty = sum(pencapa.values())//1
+penalties[1] += exceed_capacity_penalty
+penalties_count[1] += sum([1 for p in pencapa.values() if p > 0])
 
 print("Total courses:", TOTAL_COURSES)
 print("Total students:", len(STUDENTS))
@@ -301,10 +312,10 @@ print("Total students having an exam:", len(STUDENT_CLEAN))
 # print("penalties_count:", penalties_count)
 print("Each penalty value of solution:")
 for k, v in penalties.items():
-    print(str(int(k)-1)+": "+str(v))
+    print(str(int(k))+": "+str(v))
 print("Each penalty count of solution:")
 for k, v in penalties_count.items():
-    print(str(int(k)-1)+": "+str(v))
-print("Exceed capacity penalty =", exceed_capacity_penalty)
+    print(str(int(k))+": "+str(v))
+# print("Exceed capacity penalty =", exceed_capacity_penalty)
 print("Total penalty =", sum(penalties.values()))
 print("Total penalty count =", sum(penalties_count.values()))
