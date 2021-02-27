@@ -15,3 +15,6 @@ fa_course = "data/exam-courses-faculty"
 
 # capacity file path
 capacity = "data/capacity/sum-capa-reg.in"
+
+# output folder path
+out_folder = "data/sched-exam-table"
