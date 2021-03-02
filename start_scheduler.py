@@ -40,5 +40,5 @@ for i in range(6):
         file = "py final_exam_graph_coloring_NSC.py "+option[j]+" "+semester[i]
         os.system(file)
         round_count += 1
-        printProgressBar(round_count + 1, 24, prefix="Progress:", suffix="Complete", length=50)
+        printProgressBar(round_count, 24, prefix="Progress:", suffix="Complete", length=50)
         
