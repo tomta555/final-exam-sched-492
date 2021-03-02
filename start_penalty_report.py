@@ -30,14 +30,14 @@ def printProgressBar(
     # Print New Line on Complete
     if iteration == total:
         print()
-
+folder = "data/sched-exam-table/" 
 semester = ["161","261","162","262","163","263"]
-file_list = os.listdir("data/sched-exam-old/")
+file_list = os.listdir(folder)
 round_count = 0
 printProgressBar(0, 24, prefix="Progress:", suffix="Complete", length=50)
 for i in range(6):
     for j in range(4):
-        file = "py penalty_calc.py "+"./data/sched-exam-old/"+file_list[round_count ]+" "+semester[i]
+        file = "py penalty_calc.py "+folder+file_list[round_count]+" "+semester[i]
         os.system(file)
         round_count += 1
         printProgressBar(round_count, 24, prefix="Progress:", suffix="Complete", length=50)
