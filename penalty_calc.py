@@ -3,67 +3,113 @@ import csv
 import ast
 import os
 import math
-import stscheduler
 
 course_slot = {}
 exam_table = sys.argv[1]
-# regis_student = sys.argv[2]
-exam_courses = set()
+OPTION2 = sys.argv[2]
+
+aca_year = OPTION2[1:]
+sem = OPTION2[:1]
+
+semester = sem
+
+academic_year = aca_year
+
+# student regist file path
+regist_path = "data/regist/regist-"+academic_year+"-"+semester+"-cb-sec.in"
+
+# student enrolled courses file path
+st_courses_path = "data/sched-"+academic_year+"-"+semester+"/courses-"+academic_year+"-"+semester+".in"
+
+# all exam courses file path
+all_courses_path = "data/all-exam-courses/all-exam-course.in"
+
+# conflicts file path
+conflicts_path  = "data/sched-"+academic_year+"-"+semester+"/conflicts-"+academic_year+"-"+semester+"-sorted.in"
+
+# courses by faculty folder path
+fa_course_path  = "data/exam-courses-faculty"
+
+# capacity file path
+capacity_path  = "data/capacity/sum-capa-reg.in"
+
+# output folder path
+out_folder_path  = "data/sched-exam-table/"
+
+penalty_file_path  = "data/sched-exam-table/solution_penalty.txt"
+
 student_enrolled_courses = set()
 course_total_enroll = {}
-max_capacity = {
-    "01": math.inf,
-    "02": math.inf,
-    "03": math.inf,
-    "04": math.inf,
-    "05": math.inf,
-    "06": math.inf,
-    "07": math.inf,
-    "08": math.inf,
-    "09": math.inf,
-    "10": math.inf,
-    "11": math.inf,
-    "12": math.inf,
-    "13": math.inf,
-    "14": math.inf,
-    "15": math.inf,
-    "16": math.inf,
-    "17": math.inf,
-    "18": math.inf,
-    "19": math.inf,
-    "20": math.inf,
-    "21": math.inf,
-    "RB": math.inf,
-    "99": math.inf,
+MAX_CAPACITY = {
+    "01": 0,
+    "02": 0,
+    "03": 0,
+    "04": 0,
+    "05": 0,
+    "06": 0,
+    "07": 0,
+    "08": 0,
+    "09": 0,
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 0,
+    "14": 0,
+    "15": 0,
+    "16": 0,
+    "17": 0,
+    "18": 0,
+    "19": 0,
+    "20": 0,
+    "21": 0,
+    "RB": 0,
+    "99": math.inf
 }
-course_group = {}
-
-with open(exam_table, "r") as read_exam_slot:
+TOTAL_SLOTS = 42
+SLOT_CAPACITY = { s:MAX_CAPACITY.copy() for s in range(TOTAL_SLOTS) }
+with open(exam_table, "r", encoding="utf-8-sig") as read_exam_slot:
     for i in read_exam_slot:
         course, slot = i.strip().split(" ")
         course_slot[course] = int(slot)
-        exam_courses.add(course)
 
-with open(stscheduler.regist, "r", encoding="utf-8-sig") as regist:
+
+with open(regist_path, "r", encoding="utf-8-sig") as regist:
     STUDENTS = list(csv.reader(regist, delimiter=" "))
 
 
-with open(stscheduler.st_courses, "r", encoding="utf-8-sig") as courses:
+with open(st_courses_path, "r", encoding="utf-8-sig") as courses:
     for row in courses:
         student_enrolled_courses.add(row.split()[0])
         course_total_enroll[row.split()[0]] = int(row.split()[1])
 
 # Read capacity
 # for file in os.listdir('data/used-capacity/capa-reg'):
-with open(stscheduler.capacity, "r", encoding="utf-8-sig") as courses:
-    for row in courses:
-        max_capacity[row.split()[0]] = int(row.split()[1])
+with open(capacity_path, "r", encoding="utf-8-sig") as capa:
+    for row in capa:
+        MAX_CAPACITY[row.split()[0]] = int(row.split()[1])
 
-for file in os.listdir(stscheduler.fa_course):
-    with open(os.path.join(stscheduler.fa_course, file), "r", encoding="utf-8-sig") as courses:
+COURSE_FACULTY = {}
+
+for file in os.listdir(fa_course_path):
+    with open(os.path.join(fa_course_path, file), "r", encoding="utf-8-sig") as courses:
         for row in courses:
-            course_group[row.rstrip("\n")] = file.replace(".in", "")
+            COURSE_FACULTY[row.rstrip("\n")] = file.replace(".in", "")
 
+exam_courses = set()
+with open(all_courses_path, "r", encoding="utf-8-sig") as courses:
+    for c in courses:
+        cs = c.rstrip("\n")
+        exam_courses.add(cs)
+
+all_courses = set()
+for c in student_enrolled_courses:
+    x = c
+    if len(c) > 6:
+        x = c[:-4]
+    if x in exam_courses:
+        all_courses.add(c)
+# if "462405" in all_courses:
+#     print(True)
 # to_remove = set()
 # for c in student_enrolled_courses:
 #     if c[3]=="7":
@@ -74,7 +120,7 @@ for file in os.listdir(stscheduler.fa_course):
 #         to_remove.add(c)
 # student_enrolled_courses = student_enrolled_courses.difference(to_remove)
 
-COURSE_LIST = list(student_enrolled_courses.intersection(exam_courses))
+COURSE_LIST = list(all_courses)
 COURSE_LIST.sort()
 
 TOTAL_COURSES = len(COURSE_LIST)
@@ -195,77 +241,167 @@ def penalty_calc(pen_count):
 def calc_table(solution):
     table = {}
     for k, v in solution.items():
-        if str(v) not in table:
-            table[str(v)] = [k]
+        if v not in table:
+            table[v] = [k]
         else:
-            table[str(v)].append(k)
+            table[v].append(k)
     return table
 
 
 def linear_pen(x):
-    return 10 * x
+    return 500 * (x - 80)
 
 
 def expo_pen(x):
-    return 1000 + 4 ** (x - 100)
+    return (500 * (x - 80)) + (2**(2*((x / 10) - 1))) - (2**18)
 
-
-def pen_capacity(solution, max_capacity, course_group, course_total_enroll):
-    slot_penalty = {}
-    table = calc_table(solution)
-    for k, v in table.items():
-        curr_capacity = {}
-        for c in v:
-            group = course_group.get(c, "99")
-            # if group == '19':
-            #     print(c, course_total_enroll[c])
-            if group not in curr_capacity.keys():
-                curr_capacity[group] = course_total_enroll[c]
-            else:
-                curr_capacity[group] += course_total_enroll[c]
-
-        penalty = 0
-
-        # sort by capa -desc
-        for group, capa in sorted(curr_capacity.items(), key=lambda item: item[1], reverse=True):
-            max_rb_capa = max_capacity['RB']
-            rb_capa = 0
-            max_capa80 = (max_capacity[group] * 80) // 100
-            
-            # temporary exclude eng course
-            if group == "01" and capa > 5000:
-                continue
-            if group == "19" and capa > 3000:
-                continue
-
-            # if reach 80% of capacity the rest students will be assign to RB
-            if capa > max_capa80:
-                split_capa = capa - max_capa80
-                # if RB available
-                if split_capa <= max_rb_capa - rb_capa:
-                    rb_capa += split_capa
+def calc_capacity_penalty_v1(fa, slot, total_std_in_course, max_capacity):
+    capacity_penalty = 0
+    fa_penalty = 0
+    rb_penalty = 0
+    used_rb_capa = SLOT_CAPACITY[slot]["RB"]
+    used_fa_capa = SLOT_CAPACITY[slot][fa]
+    max_rb_capa = max_capacity["RB"]
+    max_fa_capa = max_capacity[fa]
+    max80_rb_capa = (max_rb_capa * 80) // 100
+    max80_fa_capa = (max_fa_capa * 80) // 100 
+    this_used_rb_capa = 0
+    this_used_fa_capa = 0
+    rb80_remain = max80_rb_capa - used_rb_capa
+    fa80_remain = max80_fa_capa - used_fa_capa
+    rb80_100 = max_rb_capa - max80_rb_capa
+    fa80_100 = max_fa_capa - max80_fa_capa
+    d = False
+    if total_std_in_course > fa80_remain:
+        remain_std = total_std_in_course - fa80_remain
+        if remain_std > rb80_remain:
+            remain_std = remain_std - rb80_remain
+            if remain_std > fa80_100:
+                remain_std = remain_std - fa80_100
+                # over fa80 -> over rb80 -> over fa100 -> over rb100 -> overflow fa100
+                if remain_std > rb80_100:
+                    remain_std = remain_std - rb80_100
+                    overflow_percent = ((remain_std + max_fa_capa) / max_fa_capa) * 100
+                    this_used_fa_capa = fa80_remain + fa80_100
+                    this_used_rb_capa = rb80_remain + rb80_100
+                    fa_penalty = expo_pen(overflow_percent)
+                    rb_penalty = linear_pen(100)
+                # over fa80 -> over rb80 -> over fa100 -> fit in rb80-100
                 else:
-                    capacity_percent = (capa / max_capacity[group]) * 100
-                    if capacity_percent > 100:
-                        print("capa%", capacity_percent)
-                        print("capa", capa)
-                        print("max capa", max_capacity[group])
-                        print("faculty", group)
-                        print("------------------------")
-                        penalty += expo_pen(capacity_percent)
-                    elif capacity_percent >= 80:
-                        penalty += linear_pen(capacity_percent)
-                
-                rb_capacity_percent = (rb_capa / max_rb_capa) * 100
+                    over80_rb = ((max80_rb_capa + remain_std) / max_rb_capa) * 100
+                    this_used_fa_capa = fa80_remain + fa80_100
+                    this_used_rb_capa = rb80_remain + remain_std
+                    fa_penalty = linear_pen(100)
+                    rb_penalty = linear_pen(over80_rb)
 
-                if rb_capacity_percent > 100:
-                    penalty += expo_pen(rb_capacity_percent)
-                elif rb_capacity_percent >= 80:
-                    penalty += linear_pen(rb_capacity_percent)
+            # over fa80 -> over rb80 -> fit in fa80-100
+            else:
+                over80_fa = ((max80_fa_capa + remain_std) / max_fa_capa) * 100
+                this_used_fa_capa = fa80_remain + remain_std
+                this_used_rb_capa = rb80_remain
+                fa_penalty = linear_pen(over80_fa)
+        # over fa80 -> fit in rb80
+        else:
+            this_used_fa_capa = fa80_remain
+            this_used_rb_capa = remain_std
+    # fit in fa80        
+    else:
+        this_used_fa_capa = total_std_in_course
+    capacity_penalty = fa_penalty + rb_penalty
 
-        slot_penalty[k] = penalty
+    return capacity_penalty, this_used_fa_capa, this_used_rb_capa
 
-    return slot_penalty
+def calc_capacity_penalty_for_eng(fa, slot, total_std_in_course, max_capacity):
+    fa_for_eng = ["02","03","04","05","06","08","15","16","18","19","20"]
+    fa_for_eng = sorted(fa_for_eng, key = lambda fa : max_capacity[fa], reverse=True)
+    available_fa = ["01","RB"] + fa_for_eng
+    this_used_fa_capa = {}
+    penalty = 0
+    remain = total_std_in_course
+    for fa in available_fa:
+        used_fa_capa = SLOT_CAPACITY[slot][fa]
+        max80_fa_capa = (max_capacity[fa] * 80) // 100
+    
+        # penalty for eng in same slot
+        if used_fa_capa == max80_fa_capa:
+            penalty += 1
+
+        fa80_remain = max80_fa_capa - used_fa_capa
+        if remain > fa80_remain:
+            this_used_fa_capa[fa] = fa80_remain
+            remain = remain - fa80_remain
+        else:
+            this_used_fa_capa[fa] = remain
+            remain = 0
+            break
+    
+    if remain > 0:
+        for fa in available_fa:
+            max_fa_capa = max_capacity[fa]
+            max80_fa_capa = (max_fa_capa * 80) // 100
+            fa80_100 = max_fa_capa - max80_fa_capa
+            if remain > fa80_100:
+                this_used_fa_capa[fa] += fa80_100
+                remain = remain - fa80_100
+                penalty += linear_pen(100)
+            else:
+                this_used_fa_capa[fa] += remain
+                over80_percent = ((remain + max80_fa_capa) / max_fa_capa) * 100
+                penalty += linear_pen(over80_percent)
+                remain = 0
+                break
+    if remain > 0:
+        max_01_capa = max_capacity["01"]
+        overflow_percent = ((remain + max_01_capa) / max_01_capa) * 100
+        penalty += expo_pen(overflow_percent)
+    return penalty, this_used_fa_capa
+
+
+def pen_capacity(solution, max_capacity, course_faculty, course_total_enroll):
+    global SLOT_CAPACITY
+    slot_penalty_count = 0
+    capacity_penalty = { i:0 for i in range(TOTAL_SLOTS)}
+    capacity_penalty_detail = {}
+    for n, slot in solution.items():
+        node_n = n
+        if len(n) > 6:
+            node_n = n[:-4]
+        course_fa = course_faculty.get(node_n,"99")
+        total_std_in_course = course_total_enroll[n]
+        used_capa = {}
+        if node_n == "001101" or node_n == "001102" or node_n == "001201":
+            capa_pen, all_used_capa = calc_capacity_penalty_for_eng(course_fa, slot ,total_std_in_course,max_capacity)
+            used_capa[slot] = all_used_capa
+        else:
+            capa_pen, used_fa, used_rb = calc_capacity_penalty_v1(course_fa, slot, total_std_in_course, max_capacity)
+
+            if node_n == "140104":
+                capa_pen = 0
+                used_fa = 0
+                used_rb = 0
+            used_capa[slot] = {}
+            used_capa[slot]["fa"] = used_fa
+            used_capa[slot]["RB"] = used_rb
+        capacity_penalty[slot] += capa_pen
+
+        if capa_pen > 0:
+            if slot not in capacity_penalty_detail.keys():
+                capacity_penalty_detail[slot] = {"fa":[course_fa],"cid":[node_n]}
+            else:
+                capacity_penalty_detail[slot]["fa"].append(course_fa)
+                capacity_penalty_detail[slot]["cid"].append(node_n)
+
+        if node_n == "001101" or node_n == "001102" or node_n == "001201":
+            for fa, capa in used_capa[slot].items():
+                SLOT_CAPACITY[slot][fa] += capa
+        else:
+            SLOT_CAPACITY[slot][course_fa] += used_capa[slot]["fa"]
+            SLOT_CAPACITY[slot]["RB"] += used_capa[slot]["RB"]
+ 
+    for slot in range(TOTAL_SLOTS):
+        if capacity_penalty[slot] > 0:
+            slot_penalty_count += 1
+    return capacity_penalty_detail,capacity_penalty, slot_penalty_count
 
 def get_reg_exam_solution(course_slot, course_list):
     solution = {}
@@ -297,25 +433,32 @@ for s, count in STUDENT_DUP_COUNT.items():
         penalties_count[i] += pen_count[i]
 
 reg_exam = get_reg_exam_solution(course_slot,COURSE_LIST)
-pencapa = pen_capacity(reg_exam, max_capacity, course_group, course_total_enroll)
-exceed_capacity_penalty = sum(pencapa.values())//1
+capa_detail, slot_penalty, pencapa_count = pen_capacity(reg_exam, MAX_CAPACITY, COURSE_FACULTY, course_total_enroll)
+exceed_capacity_penalty = sum(slot_penalty.values()) //1
 penalties[1] += exceed_capacity_penalty
-penalties_count[1] += sum([1 for p in pencapa.values() if p > 0])
+penalties_count[1] += pencapa_count
 
-print("Total courses:", TOTAL_COURSES)
-print("Total students:", len(STUDENTS))
-print("Total students having an exam:", len(STUDENT_CLEAN))
+# print("Total courses:", TOTAL_COURSES)
+# print("Total students:", len(STUDENTS))
+# print("Total students having an exam:", len(STUDENT_CLEAN))
 # print("Total students after remove duplicate student:", len(STUDENT_DUP_COUNT))
 # print('Each penalty value of solution:\n',penalties)
 # print('Each penalty count of solution:\n',penalties_count)
 # print("penalties:", penalties)
 # print("penalties_count:", penalties_count)
-print("Each penalty value of solution:")
-for k, v in penalties.items():
-    print(str(int(k))+": "+str(v))
-print("Each penalty count of solution:")
-for k, v in penalties_count.items():
-    print(str(int(k))+": "+str(v))
+# print("Each penalty value of solution:")
+# for k, v in penalties.items():
+#     print(str(int(k))+": "+str(v))
+# print("Each penalty count of solution:")
+# for k, v in penalties_count.items():
+#     print(str(int(k))+": "+str(v))
+
+with open(penalty_file_path, "a") as p_file:
+    p_file.write("name:" + exam_table +"\n")
+    p_file.write("penalty:      "+str(penalties)+"\n")
+    p_file.write("penalty_count:"+str(penalties_count)+"\n")
+    p_file.write(str(capa_detail)+"\n\n")
+
 # print("Exceed capacity penalty =", exceed_capacity_penalty)
-print("Total penalty =", sum(penalties.values()))
-print("Total penalty count =", sum(penalties_count.values()))
+# print("Total penalty =", sum(penalties.values()))
+# print("Total penalty count =", sum(penalties_count.values()))
