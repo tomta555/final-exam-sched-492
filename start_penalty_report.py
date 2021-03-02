@@ -1,5 +1,6 @@
 import os
 
+
 def printProgressBar(
     iteration,
     total,

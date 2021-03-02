@@ -33,6 +33,7 @@ def printProgressBar(
 option = ["-deg","-std","-deg-bfs","-std-bfs"]
 semester = ["161","261","162","262","163","263"]
 round_count = 0
+
 printProgressBar(0, 24, prefix="Progress:", suffix="Complete", length=50)
 for i in range(6):
     for j in range(4):
