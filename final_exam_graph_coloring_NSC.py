@@ -17,6 +17,9 @@ outout_file_postfix = OPTION
 aca_year = OPTION2[1:]
 sem = OPTION2[:1]
 
+# Valid slot [0-41]
+TOTAL_SLOTS = 42
+
 semester = sem
 
 academic_year = aca_year
@@ -40,7 +43,7 @@ fa_course_path  = "data/exam-courses-faculty"
 capacity_path  = "data/capacity/sum-capa-reg.in"
 
 # output folder path
-out_folder_path  = "data/sched-exam-table/"
+out_folder_path  = "data/sched-exam-table-"+str(TOTAL_SLOTS)+"/"
 
 
 START_TIME = time.time() 
@@ -69,8 +72,7 @@ MAX_CAPACITY = {
     "RB": 0,
     "99": math.inf
 }
-# Valid slot [0-41]
-TOTAL_SLOTS = 42
+
 SLOTS = [slot for slot in range(TOTAL_SLOTS)]
 SLOT_CAPACITY = { s:MAX_CAPACITY.copy() for s in range(TOTAL_SLOTS) }
 
