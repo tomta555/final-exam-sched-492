@@ -30,7 +30,7 @@ def printProgressBar(
     # Print New Line on Complete
     if iteration == total:
         print()
-folder = "data/sched-exam-table/" 
+folder = "data/sched-exam-table-42/" 
 semester = ["161","261","162","262","163","263"]
 file_list = os.listdir(folder)
 round_count = 0
