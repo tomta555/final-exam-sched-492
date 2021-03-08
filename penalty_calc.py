@@ -4,12 +4,15 @@ import ast
 import os
 import math
 
+conflicts = {}
 course_slot = {}
 exam_table = sys.argv[1]
 OPTION2 = sys.argv[2]
 
 aca_year = OPTION2[1:]
 sem = OPTION2[:1]
+
+TOTAL_SLOTS = 42
 
 semester = sem
 
@@ -36,7 +39,7 @@ capacity_path  = "data/capacity/sum-capa-reg.in"
 # output folder path
 out_folder_path  = "data/sched-exam-table/"
 
-penalty_file_path  = "data/sched-exam-table/solution_penalty.txt"
+penalty_file_path  = "data/sched-exam-table-"+str(TOTAL_SLOTS)+"/solution_penalty.txt"
 
 student_enrolled_courses = set()
 course_total_enroll = {}
@@ -65,7 +68,7 @@ MAX_CAPACITY = {
     "RB": 0,
     "99": math.inf
 }
-TOTAL_SLOTS = 42
+
 SLOT_CAPACITY = { s:MAX_CAPACITY.copy() for s in range(TOTAL_SLOTS) }
 with open(exam_table, "r", encoding="utf-8-sig") as read_exam_slot:
     for i in read_exam_slot:
@@ -201,7 +204,12 @@ def pen_consecutive_d(s1, s2):
     return 0
 
 
-def penalty_count(student):
+def penalty_count(student,student_courses):
+    sc_sorted_rmdup = {}
+    global conflicts
+    for i in range(len(student_courses)):
+        sc_sorted_rmdup[student_courses[i]] = student[i]
+    sc_sorted = sorted(student_courses, key=lambda x: sc_sorted_rmdup[x])
     student.sort()
 
     pen_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0}
@@ -211,6 +219,11 @@ def penalty_count(student):
 
     for i in range(len(student) - 1):
         count = pen_overlap(student[i], student[i + 1])
+        if count == 1:
+            if str(sc_sorted[i]) + " " + str(sc_sorted[i + 1]) in conflicts:
+                conflicts[str(sc_sorted[i]) + " " + str(sc_sorted[i + 1])] += 1
+            else:
+                conflicts[str(sc_sorted[i]) + " " + str(sc_sorted[i + 1])] = 1
         pen_count[2] += count
         count = pen_consecutive_a(student[i], student[i + 1])
         pen_count[3] += count
@@ -418,11 +431,13 @@ STUDENT_DUP_COUNT = {str(s): STUDENT_CLEAN.count(s) for s in STUDENT_CLEAN}
 # For each student
 for s, count in STUDENT_DUP_COUNT.items():
     student_slot = []
+    student_courses = []
     # Convert course-code to exam-slot
     for key in ast.literal_eval(s):
         student_slot.append(course_slot[key])
+        student_courses.append(key)
 
-    pen_count = penalty_count(student_slot)
+    pen_count = penalty_count(student_slot,student_courses)
     # Multiply duplicate student count with pen_count
     pen_count.update((k, v * count) for k, v in pen_count.items())
 
@@ -455,10 +470,18 @@ penalties_count[1] += pencapa_count
 
 with open(penalty_file_path, "a") as p_file:
     p_file.write("name:" + exam_table +"\n")
+    p_file.write("total_penalty:"+str(sum(penalties.values()))+"\n")
     p_file.write("penalty:      "+str(penalties)+"\n")
     p_file.write("penalty_count:"+str(penalties_count)+"\n")
-    p_file.write(str(capa_detail)+"\n\n")
+    if len(conflicts) > 0:
+        p_file.write(str(capa_detail)+"\n")
+        p_file.write("conflicts:    "+str(conflicts)+"\n\n")
+    else:
+        p_file.write(str(capa_detail)+"\n\n")
 
+# with open("conflict-courses.txt", "a") as cf:
+#     for k, v in conflicts.items():
+#         cf.write(str(k) + "," + str(v) + "\n")
 # print("Exceed capacity penalty =", exceed_capacity_penalty)
 # print("Total penalty =", sum(penalties.values()))
 # print("Total penalty count =", sum(penalties_count.values()))
