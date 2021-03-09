@@ -39,7 +39,9 @@ capacity_path  = "data/capacity/sum-capa-reg.in"
 # output folder path
 out_folder_path  = "data/sched-exam-table/"
 
-penalty_file_path  = "data/sched-exam-table-"+str(TOTAL_SLOTS)+"/solution_penalty.txt"
+penalty_file_path  = "data/sched-exam-table-"+str(TOTAL_SLOTS)+"/"
+
+penalty_file = "solution_penalty.txt"
 
 student_enrolled_courses = set()
 course_total_enroll = {}
@@ -468,20 +470,26 @@ penalties_count[1] += pencapa_count
 # for k, v in penalties_count.items():
 #     print(str(int(k))+": "+str(v))
 
-with open(penalty_file_path, "a") as p_file:
+with open(penalty_file_path+penalty_file, "a") as p_file:
     p_file.write("name:" + exam_table +"\n")
-    p_file.write("total_penalty:"+str(sum(penalties.values()))+"\n")
-    p_file.write("penalty:      "+str(penalties)+"\n")
-    p_file.write("penalty_count:"+str(penalties_count)+"\n")
+    p_file.write("total courses:          "+str(TOTAL_COURSES)+"\n")
+    p_file.write("student having an exam: "+str(len(STUDENT_CLEAN))+"\n")
+    p_file.write("total_penalty:          "+str(sum(penalties.values()))+"\n")
+    p_file.write("penalty:       "+str(penalties)+"\n")
+    p_file.write("penalty_count: "+str(penalties_count)+"\n")
     if len(conflicts) > 0:
         p_file.write(str(capa_detail)+"\n")
         p_file.write("conflicts:    "+str(conflicts)+"\n\n")
     else:
         p_file.write(str(capa_detail)+"\n\n")
 
-# with open("conflict-courses.txt", "a") as cf:
-#     for k, v in conflicts.items():
-#         cf.write(str(k) + "," + str(v) + "\n")
-# print("Exceed capacity penalty =", exceed_capacity_penalty)
-# print("Total penalty =", sum(penalties.values()))
-# print("Total penalty count =", sum(penalties_count.values()))
+with open(penalty_file_path+"pen_result_csv.csv","a") as res_csv:
+    res_csv.write(exam_table+"\n")
+    pen_str = ","
+    for i in range(len(penalties_count.keys())):
+        pen_str += str(penalties_count[i+1])+","
+    res_csv.write(pen_str+str(sum(penalties_count.values()))+"\n")
+    pen_str = ","
+    for i in range(len(penalties.keys())):
+        pen_str += str(penalties[i+1])+","
+    res_csv.write(pen_str+str(sum(penalties.values()))+"\n")
