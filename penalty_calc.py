@@ -12,7 +12,7 @@ OPTION2 = sys.argv[2]
 aca_year = OPTION2[1:]
 sem = OPTION2[:1]
 
-TOTAL_SLOTS = 42
+TOTAL_SLOTS = 36
 
 semester = sem
 
@@ -401,10 +401,10 @@ def pen_capacity(solution, max_capacity, course_faculty, course_total_enroll):
 
         if capa_pen > 0:
             if slot not in capacity_penalty_detail.keys():
-                capacity_penalty_detail[slot] = {"fa":[course_fa],"cid":[node_n]}
+                capacity_penalty_detail[slot] = {"faculty_id":[course_fa],"course_id":[node_n]}
             else:
-                capacity_penalty_detail[slot]["fa"].append(course_fa)
-                capacity_penalty_detail[slot]["cid"].append(node_n)
+                capacity_penalty_detail[slot]["faculty_id"].append(course_fa)
+                capacity_penalty_detail[slot]["course_id"].append(node_n)
 
         if node_n == "001101" or node_n == "001102" or node_n == "001201":
             for fa, capa in used_capa[slot].items():
@@ -478,10 +478,10 @@ with open(penalty_file_path+penalty_file, "a") as p_file:
     p_file.write("penalty:       "+str(penalties)+"\n")
     p_file.write("penalty_count: "+str(penalties_count)+"\n")
     if len(conflicts) > 0:
-        p_file.write(str(capa_detail)+"\n")
+        p_file.write("exceed_capa:  "+str(capa_detail)+"\n")
         p_file.write("conflicts:    "+str(conflicts)+"\n\n")
     else:
-        p_file.write(str(capa_detail)+"\n\n")
+        p_file.write("exceed_capa:  "+str(capa_detail)+"\n\n")
 
 with open(penalty_file_path+"pen_result_csv.csv","a") as res_csv:
     res_csv.write(exam_table+"\n")
